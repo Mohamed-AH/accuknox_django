@@ -1,0 +1,38 @@
+Topic: Custom Classes in Python
+Here's the implementation of the Rectangle class based on the given requirements:
+
+This Rectangle class satisfies all the given requirements:
+
+It requires length and width (both integers) to be initialized.
+It can be iterated over using a for loop.
+When iterated, it first yields the length in the format {'length': <VALUE_OF_LENGTH>}, followed by the width in the format {'width': <VALUE_OF_WIDTH>}.
+
+The __iter__ method makes the class iterable, and the __next__ method defines what should be returned in each iteration. We use a counter (self._iter_index) to keep track of which attribute to return next.
+
+class Rectangle:
+    def __init__(self, length: int, width: int):
+        self.length = length
+        self.width = width
+    
+    def __iter__(self):
+        self._iter_index = 0
+        return self
+    
+    def __next__(self):
+        if self._iter_index == 0:
+            self._iter_index += 1
+            return {'length': self.length}
+        elif self._iter_index == 1:
+            self._iter_index += 1
+            return {'width': self.width}
+        else:
+            raise StopIteration
+
+# Example usage:
+rect = Rectangle(5, 3)
+for item in rect:
+    print(item)
+
+# Output:
+# {'length': 5}
+# {'width': 3}
