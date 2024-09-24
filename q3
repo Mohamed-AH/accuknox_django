@@ -1,0 +1,42 @@
+Question 3: By default do django signals run in the same database transaction as the caller?
+Answer: Yes, by default, Django signals run in the same database transaction as the caller.
+To demonstrate this, we'll create a scenario where we attempt to save two related objects, with the second save failing due to a constraint. We'll use a signal to create the second object:
+In this example, when you call the create_parent_and_child view, the entire operation will fail, and no Parent or Child objects will be created. This is because the signal runs within the same transaction as the caller. When the second Child object fails to be created due to the unique constraint on the name field, it rolls back the entire transaction, including the creation of both Parent objects.
+This proves that Django signals run in the same database transaction as the caller by default.
+
+# models.py
+from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.db import transaction
+
+class Parent(models.Model):
+    name = models.CharField(max_length=100)
+
+class Child(models.Model):
+    parent = models.ForeignKey(Parent, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100, unique=True)
+
+@receiver(post_save, sender=Parent)
+def create_child(sender, instance, created, **kwargs):
+    if created:
+        Child.objects.create(parent=instance, name="Unique Name")
+
+# views.py
+from django.http import HttpResponse
+from .models import Parent
+from django.db import transaction
+
+def create_parent_and_child(request):
+    try:
+        with transaction.atomic():
+            parent1 = Parent.objects.create(name="Parent 1")
+            # This will trigger the signal to create a child with name "Unique Name"
+            
+            parent2 = Parent.objects.create(name="Parent 2")
+            # This will also trigger the signal, but it will fail because "Unique Name" is already taken
+        
+        return HttpResponse("Parents and children created successfully")
+    except Exception as e:
+        return HttpResponse(f"Transaction failed: {str(e)}")
+
